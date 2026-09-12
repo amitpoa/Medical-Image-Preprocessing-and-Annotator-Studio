@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Film Prep — Medical Image Preprocessing Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f16;
+    --panel: #111923;
+    --panel-2: #0d141d;
+    --line: #223040;
+    --text: #e8edf3;
+    --muted: #8697a8;
+    --accent: #6fb4ff;
+    --accent-dim: #3a6690;
+    --warm: #f2a65a;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  a{color:inherit;}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 32px;}
+  @media (max-width:640px){.wrap{padding:0 20px;}}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,15,22,0.85);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk';font-weight:600;font-size:1.05rem;}
+  .brand-mark{
+    width:22px;height:22px;border-radius:4px;
+    border:1.5px solid var(--accent);
+    position:relative;
+  }
+  .brand-mark::after{
+    content:"";position:absolute;inset:5px;
+    background:var(--accent); opacity:0.5; border-radius:2px;
+  }
+  .nav-links{display:flex;align-items:center;gap:28px;font-size:0.92rem;color:var(--muted);}
+  .nav-links a:hover{color:var(--text);}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 20px;border-radius:8px;
+    font-size:0.92rem; font-weight:500;
+    text-decoration:none; border:1px solid transparent;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--warm);color:#26170a;}
+  .btn-primary:hover{background:#f5b876;}
+  .btn-ghost{border-color:var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--accent-dim);}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:76px 0 88px;}
+  .hero .wrap{
+    display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center;
+  }
+  @media (max-width:900px){ .hero .wrap{grid-template-columns:1fr;} }
+  .hero h1{font-size:2.7rem; line-height:1.14;}
+  @media (max-width:640px){ .hero h1{font-size:2.05rem;} }
+  .hero p{color:var(--muted); font-size:1.08rem; max-width:46ch; margin-top:18px;}
+  .hero .cta-row{display:flex; gap:14px; margin-top:32px; flex-wrap:wrap;}
+
+  /* hero visual: simplified annotated film mock */
+  .film-mock{
+    position:relative; aspect-ratio:4/5; border-radius:10px;
+    background:
+      radial-gradient(120% 90% at 30% 15%, #16202c 0%, #0a0f16 60%);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .film-mock svg{position:absolute; inset:0; width:100%; height:100%;}
+  .corner{position:absolute; width:18px; height:18px; border:2px solid var(--line);}
+  .corner.tl{top:14px; left:14px; border-right:none; border-bottom:none;}
+  .corner.tr{top:14px; right:14px; border-left:none; border-bottom:none;}
+  .corner.bl{bottom:14px; left:14px; border-right:none; border-top:none;}
+  .corner.br{bottom:14px; right:14px; border-left:none; border-top:none;}
+
+  /* ---------- SECTION shared ---------- */
+  section{padding:64px 0;}
+  .eyebrow-free-title{font-size:1.9rem; max-width:22ch;}
+  .section-sub{color:var(--muted); max-width:56ch; margin-top:14px; font-size:1rem;}
+
+  /* ---------- PIPELINE RAIL ---------- */
+  .pipeline{border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--panel-2);}
+  .rail{
+    margin-top:40px;
+    display:grid; grid-template-columns:repeat(6,1fr); gap:0;
+    position:relative;
+  }
+  @media (max-width:900px){ .rail{grid-template-columns:1fr; gap:18px;} }
+  .rail::before{
+    content:""; position:absolute; top:17px; left:4%; right:4%; height:1px;
+    background:var(--line);
+  }
+  @media (max-width:900px){ .rail::before{display:none;} }
+  .step{position:relative; padding:0 14px 0 0;}
+  .step-num{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--panel); border:1px solid var(--accent-dim);
+    color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono'; font-size:0.85rem;
+    position:relative; z-index:1;
+  }
+  .step h3{font-size:1rem; margin-top:14px;}
+  .step p{color:var(--muted); font-size:0.88rem; margin-top:6px;}
+
+  /* ---------- FEATURES ---------- */
+  .features-grid{
+    margin-top:40px;
+    display:grid; grid-template-columns:1.3fr 1fr; gap:24px;
+  }
+  @media (max-width:800px){ .features-grid{grid-template-columns:1fr;} }
+  .feature-lead{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:32px;
+  }
+  .feature-lead h3{font-size:1.3rem;}
+  .feature-lead p{color:var(--muted); margin-top:12px;}
+  .feature-list{display:flex; flex-direction:column; gap:1px; background:var(--line); border-radius:12px; overflow:hidden; border:1px solid var(--line);}
+  .feature-list .item{background:var(--panel-2); padding:18px 22px;}
+  .feature-list .item h4{font-family:'IBM Plex Sans'; font-weight:600; font-size:0.95rem; margin:0;}
+  .feature-list .item p{color:var(--muted); font-size:0.87rem; margin:6px 0 0;}
+
+  /* ---------- OUTPUT TREE ---------- */
+  .output-tree{
+    background:#080c11; border:1px solid var(--line); border-radius:10px;
+    padding:26px 28px; margin-top:36px; overflow-x:auto;
+  }
+  .output-tree pre{
+    font-family:'IBM Plex Mono', monospace; font-size:0.87rem; color:#b7c4d1;
+    margin:0; line-height:1.75;
+  }
+  .output-tree .c{color:var(--muted);}
+  .output-tree .h{color:var(--accent);}
+
+  /* ---------- LAUNCH BAND ---------- */
+  .launch{
+    background:linear-gradient(180deg, var(--panel-2), var(--bg));
+    border-top:1px solid var(--line);
+    text-align:left;
+  }
+  .launch .wrap{
+    display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+  }
+  .launch h2{font-size:1.6rem; max-width:28ch;}
+  .launch p{color:var(--muted); margin-top:10px; max-width:48ch;}
+
+  footer{border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:0.85rem;}
+  footer .wrap{display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="brand-mark"></span>Film Prep</div>
+    <div class="nav-links">
+      <a href="#pipeline">Pipeline</a>
+      <a href="#features">Features</a>
+      <a href="#output">Output</a>
+      <a href="https://github.com/YOUR-USERNAME/YOUR-REPO" class="btn btn-ghost" id="nav-github">Source</a>
+      <a href="#" class="btn btn-primary" id="nav-launch">Launch app</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Straighten the film.<br>Keep the coordinates true.</h1>
+      <p>A batch pipeline for X-ray, MRI, and CT scans. It corrects tilt, strips the scanner's black border, boosts contrast, and carries every polygon and box through the same transform — so your annotations still line up on the other side.</p>
+      <div class="cta-row">
+        <a href="#" class="btn btn-primary" id="hero-launch">Launch app</a>
+        <a href="#pipeline" class="btn btn-ghost">See how it works</a>
+      </div>
+    </div>
+    <div class="film-mock" aria-hidden="true">
+      <svg viewBox="0 0 400 500">
+        <!-- tilted "bone" shape -->
+        <g transform="rotate(-11 200 250)">
+          <rect x="150" y="30" width="46" height="420" rx="18" fill="#3a4451" opacity="0.9"/>
+          <ellipse cx="173" cy="330" rx="48" ry="40" fill="#4a5768"/>
+          <ellipse cx="150" cy="400" rx="30" ry="26" fill="#3a4451"/>
+          <ellipse cx="196" cy="405" rx="26" ry="24" fill="#3a4451"/>
+        </g>
+        <!-- annotation: light box + polygon, matching the app's real palette -->
+        <rect x="176" y="300" width="58" height="70" fill="none" stroke="#6fb4ff" stroke-width="2"/>
+        <path d="M195 312 L216 308 L222 328 L210 352 L192 344 Z" fill="#6fb4ff" fill-opacity="0.25" stroke="#6fb4ff" stroke-width="1.6"/>
+        <rect x="176" y="278" width="118" height="22" fill="#2e5a80"/>
+        <text x="184" y="293" font-family="IBM Plex Mono" font-size="12" fill="#ffffff">osteochondroma</text>
+      </svg>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    </div>
+  </div>
+</header>
+
+<section class="pipeline" id="pipeline">
+  <div class="wrap">
+    <h2 class="eyebrow-free-title">Six steps, every shape carried through</h2>
+    <p class="section-sub">Each scan moves through the same sequence, whether it arrives dead straight or photographed at an angle on a lightbox.</p>
+    <div class="rail">
+      <div class="step"><div class="step-num">1</div><h3>Deskew</h3><p>Finds the film's corners against its background and perspective-warps it flat.</p></div>
+      <div class="step"><div class="step-num">2</div><h3>Crop border</h3><p>Removes the near-black scanner margin, with a small safety border kept.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Enhance</h3><p>CLAHE contrast brings out bone edges and soft tissue detail.</p></div>
+      <div class="step"><div class="step-num">4</div><h3>Resize + pad</h3><p>Fits a square canvas at your chosen size, aspect ratio kept, median-padded.</p></div>
+      <div class="step"><div class="step-num">5</div><h3>Transform</h3><p>Every polygon and rectangle follows the same math as the pixels around it.</p></div>
+      <div class="step"><div class="step-num">6</div><h3>Sort</h3><p>Annotated scans are filed into folders by class, ready to train on.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2 class="eyebrow-free-title">Built for a folder of scans, not one at a time</h2>
+    <div class="features-grid">
+      <div class="feature-lead">
+        <h3>Drop in a batch, get back a dataset</h3>
+        <p>Upload scans alongside their LabelMe-style JSON — and an optional plain-text label file for shapes that didn't get one — and the app returns a single ZIP: cleaned images, transformed JSON, annotated overlays, and a class-sorted copy of both, all matched by filename.</p>
+      </div>
+      <div class="feature-list">
+        <div class="item"><h4>Fault-tolerant</h4><p>One corrupt file is skipped and logged — the rest of the batch still finishes.</p></div>
+        <div class="item"><h4>Live progress</h4><p>See which scan is processing and how many are left.</p></div>
+        <div class="item"><h4>Class legend + counts</h4><p>A color key and per-class shape totals appear after each run.</p></div>
+        <div class="item"><h4>processing_report.json</h4><p>Settings used, per-class counts, and any skipped files, bundled in the ZIP.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="output">
+  <div class="wrap">
+    <h2 class="eyebrow-free-title">What comes back in the ZIP</h2>
+    <p class="section-sub">Ready to hand to a training script as-is, or to inspect folder by folder first.</p>
+    <div class="output-tree">
+<pre><span class="h">clean_images/</span>          <span class="c"># preprocessed grayscale PNGs</span>
+<span class="h">clean_json/</span>            <span class="c"># JSON, coordinates matched to clean_images</span>
+<span class="h">annotated_images/</span>      <span class="c"># shapes drawn on, for a quick visual check</span>
+<span class="h">label_wise_dataset/</span>    <span class="c"># annotated images + JSON, sorted by class</span>
+<span class="h">processing_report.json</span> <span class="c"># run settings, class counts, skipped files</span></pre>
+    </div>
+  </div>
+</section>
+
+<section class="launch">
+  <div class="wrap">
+    <div>
+      <h2>Try it on your own scans</h2>
+      <p>No installation — upload a folder of images and JSON files, and download the processed dataset a few moments later.</p>
+    </div>
+    <a href="#" class="btn btn-primary" id="launch-band">Launch app</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Film Prep — open source, MIT license.</span>
+    <a href="https://github.com/YOUR-USERNAME/YOUR-REPO" id="footer-github">View source on GitHub</a>
+  </div>
+</footer>
+
+<script>
+  // Replace this with your deployed app's URL (e.g. your Render or
+  // Hugging Face Space link) once it's live, and it updates every
+  // "Launch app" button on the page automatically.
+  const APP_URL = "https://your-app-url-here.onrender.com";
+  const REPO_URL = "https://github.com/YOUR-USERNAME/YOUR-REPO";
+
+  document.querySelectorAll('#nav-launch, #hero-launch, #launch-band')
+    .forEach(el => el.setAttribute('href', APP_URL));
+  document.querySelectorAll('#nav-github, #footer-github')
+    .forEach(el => el.setAttribute('href', REPO_URL));
+</script>
+
+</body>
+</html>
